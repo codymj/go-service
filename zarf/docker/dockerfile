@@ -1,0 +1,25 @@
+# build go binary
+FROM golang:1.19 as build_api
+ENV CGO_ENABLED 0
+ARG BUILD_REF
+
+# copy source code to container
+COPY . /service
+
+# build service binary
+WORKDIR /service/app/services/api
+RUN go build -ldflags "-X main.build=${BUILD_REF}"
+
+# run the go binary in alpine
+FROM alpine:3.14
+ARG BUILD_DATE
+ARG BUILD_REF
+COPY --from=build_api /service /service/service
+WORKDIR /service
+CMD ["./service"]
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.title="api" \
+      org.opencontainers.image.authors="Cody Johnson <codyj@protonmail.com>" \
+      org.opencontainers.image.source="https://github.com/codymj/go-service/app/services/api" \
+      org.opencontainers.image.revision="${BUILD_REF}" \
+      org.opencontainers.image.vendor="CMJ"
