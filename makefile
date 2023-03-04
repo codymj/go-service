@@ -31,6 +31,10 @@ kind-up:
 kind-down:
 	kind delete cluster --name $(KIND_CLUSTER)
 
+kind-load:
+	kind load docker-image service-amd64:$(VERSION) --name $(KIND_CLUSTER)
+
 kind-status:
 	kubectl get nodes -o wide
 	kubectl get svc -o wide
+	kubectl get pods -o wide --watch --all-namespaces
