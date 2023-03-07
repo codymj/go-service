@@ -1,25 +1,25 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-	name: service-system
+  name: service-system
 ---
-apiVersion: v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
-	name: service-pod
-	namespace: service-system
+  name: service-pod
+  namespace: service-system
 spec:
-	selector:
-		matchLabels:
-			app: service
-	template:
-		metadata:
-			labels:
-				app: service
-		spec:
-			dnsPolicy: ClusterFirstWithHostNet
-			hostNetwork: true
-			terminationGracePeriodSeconds: 60
-		containers:
-			- name: service-api
-			  image: service-amd64:0.0.1
+  selector:
+    matchLabels:
+      app: service
+  template:
+    metadata:
+      labels:
+        app: service
+    spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      terminationGracePeriodSeconds: 60
+      containers:
+      - name: service-api
+        image: service-amd64:0.0.1

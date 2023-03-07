@@ -25,16 +25,27 @@ KIND_CLUSTER := cluster0
 kind-up:
 	kind create cluster \
 		--image kindest/node:v1.26.0@sha256:3264cbae4b80c241743d12644b2506fff13dce07fcadf29079c1d06a47b399dd \
-		--name $(KIND_CLUSTER)
+		--name $(KIND_CLUSTER) \
 		--config zarf/k8s/kind/config.yaml
 
 kind-down:
 	kind delete cluster --name $(KIND_CLUSTER)
 
+kind-restart:
+	kubectl rollout restart deployment service-pod
+
+kind-update: all kind-load kind-restart
+
 kind-load:
 	kind load docker-image service-amd64:$(VERSION) --name $(KIND_CLUSTER)
+
+kind-apply:
+	cat zarf/k8s/base/service-pod/base-service.yaml | kubectl apply -f -
 
 kind-status:
 	kubectl get nodes -o wide
 	kubectl get svc -o wide
 	kubectl get pods -o wide --watch --all-namespaces
+
+kind-logs:
+	kubectl logs -l app=service --all-containers=true -f --tail=100
