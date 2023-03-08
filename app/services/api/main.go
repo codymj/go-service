@@ -11,20 +11,30 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
+	"github.com/spf13/viper"
 	"go.uber.org/automaxprocs/maxprocs"
 )
 
-var build = "dev"
+var (
+	Registry *viper.Viper
+)
 
-// main service function
+type Web struct {
+	APIHost         string
+	DebugHost       string
+	ReadTimeout     time.Duration
+	WriteTimeout    time.Duration
+	IdleTimeout     time.Duration
+	ShutdownTimeout time.Duration
+}
+
+// main service function =======================================================
 func main() {
 	// init logger
-	logger := zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).
-		Level(zerolog.TraceLevel).
+	logger := zerolog.New(os.Stdout).
+		Level(zerolog.InfoLevel).
 		With().
 		Timestamp().
-		Caller().
-		Int("pid", os.Getpid()).
 		Logger()
 
 	// run
@@ -36,20 +46,43 @@ func main() {
 	}
 }
 
-// run service
+// run service =================================================================
 func run(logger *zerolog.Logger) error {
-	// maxproc
+	// set maxprocs
 	opt := maxprocs.Logger(logger.Printf)
 	if _, err := maxprocs.Set(opt); err != nil {
-		return fmt.Errorf("maxprocs: %w", err)
+		return fmt.Errorf("%w", err)
 	}
 	logger.Info().
 		Int("GOMAXPROCS", runtime.GOMAXPROCS(0)).
 		Msg("startup")
 
+	// set config parameters
+	viper.AutomaticEnv()
+	Registry = viper.GetViper()
+	Registry.AddConfigPath(".")
+	Registry.AddConfigPath("../../../..")
+	Registry.SetConfigFile("conf.yml")
+	err := Registry.ReadInConfig()
+	if err != nil {
+		return fmt.Errorf("fatal error config file: %w \n", err)
+	}
+
+	cfg := struct {
+		Web Web
+	}{
+		Web: Web{
+			Registry.GetString("API_HOST"),
+			Registry.GetString("DEBUG_HOST"),
+			Registry.GetDuration("READ_TIMEOUT"),
+			Registry.GetDuration("WRITE_TIMEOUT"),
+			Registry.GetDuration("IDLE_TIMEOUT"),
+			Registry.GetDuration("SHUTDOWN_TIMEOUT"),
+		},
+	}
+
 	// start
 	logger.Info().
-		Str("version", build).
 		Msg("starting service")
 	defer logger.Info().
 		Msg("shutdown successful")
@@ -58,24 +91,21 @@ func run(logger *zerolog.Logger) error {
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
 	api := http.Server{
-		Addr:         "127.0.0.1:3333",
+		Addr:         cfg.Web.APIHost,
 		Handler:      nil,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  30 * time.Second,
+		ReadTimeout:  cfg.Web.ReadTimeout,
+		WriteTimeout: cfg.Web.WriteTimeout,
+		IdleTimeout:  cfg.Web.IdleTimeout,
 	}
 
 	serverErrors := make(chan error, 1)
 	go func() {
-		logger.Info().
-			Str("status", "starting").
-			Msg("starting service")
 		serverErrors <- api.ListenAndServe()
 	}()
 
 	// shutdown
 	select {
-	case err := <-serverErrors:
+	case err = <-serverErrors:
 		return fmt.Errorf("server error: %w", err)
 
 	case sig := <-shutdown:
@@ -88,10 +118,10 @@ func run(logger *zerolog.Logger) error {
 			Any("signal", sig).
 			Msg("shutdown complete")
 
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
 		defer cancel()
 
-		if err := api.Shutdown(ctx); err != nil {
+		if err = api.Shutdown(ctx); err != nil {
 			api.Close()
 			return fmt.Errorf("could not stop server gracefully: %w", err)
 		}

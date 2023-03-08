@@ -1,0 +1,24 @@
+---
+
+# api
+API_HOST: "0.0.0.0:3333"
+DEBUG_HOST: "0.0.0.0:3339"
+READ_TIMEOUT: 5s
+WRITE_TIMEOUT: 10s
+IDLE_TIMEOUT: 120s
+SHUTDOWN_TIMEOUT: 20s
+
+# auth
+#SSL_ENABLED: true
+#KEYS_FOLDER: "zarf/keys/"
+#ActiveKID: "1b2f4160-be2e-439a-b7b8-d73b1b8647aa"
+
+# database
+#DB_HOST: 192.168.1.100
+#DB_PORT: 5432
+#DB_USER: postgres
+#DB_PASSWORD: <env>
+#DB_DBNAME: microservice-starter-db
+#DB_CONN_MAX_LIFETIME: 3m
+#DB_MAX_OPEN_CONNS: 100
+#DB_MAX_IDLE_CONNS: 100
