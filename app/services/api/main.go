@@ -53,9 +53,6 @@ func run(logger *zerolog.Logger) error {
 	if _, err := maxprocs.Set(opt); err != nil {
 		return fmt.Errorf("%w", err)
 	}
-	logger.Info().
-		Int("GOMAXPROCS", runtime.GOMAXPROCS(0)).
-		Msg("startup")
 
 	// set config parameters
 	viper.AutomaticEnv()
@@ -83,9 +80,12 @@ func run(logger *zerolog.Logger) error {
 
 	// start
 	logger.Info().
-		Msg("starting service")
+		Str("status", "started").
+		Int("GOMAXPROCS", runtime.GOMAXPROCS(0)).
+		Msg("service started")
 	defer logger.Info().
-		Msg("shutdown successful")
+		Str("status", "stopped").
+		Msg("service stopped")
 
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
@@ -98,12 +98,13 @@ func run(logger *zerolog.Logger) error {
 		IdleTimeout:  cfg.Web.IdleTimeout,
 	}
 
+	// buffered channel to listen for server errors
 	serverErrors := make(chan error, 1)
 	go func() {
 		serverErrors <- api.ListenAndServe()
 	}()
 
-	// shutdown
+	// block main and wait for shutdown
 	select {
 	case err = <-serverErrors:
 		return fmt.Errorf("server error: %w", err)
@@ -111,12 +112,8 @@ func run(logger *zerolog.Logger) error {
 	case sig := <-shutdown:
 		logger.Info().
 			Str("status", "shutdown").
-			Any("signal", sig).
-			Msg("shutting down")
-		defer logger.Info().
-			Str("status", "stopped").
-			Any("signal", sig).
-			Msg("shutdown complete")
+			Any("signal", sig.String()).
+			Msg("service shutting down")
 
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
 		defer cancel()
