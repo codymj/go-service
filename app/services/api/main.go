@@ -113,14 +113,6 @@ func run(logger *zerolog.Logger) error {
 		Str("host", cfg.Web.APIHost).
 		Int("GOMAXPROCS", runtime.GOMAXPROCS(0)).
 		Msg("service started")
-	defer logger.Info().Timestamp().
-		Str("status", "stopped").
-		Str("host", cfg.Web.APIHost).
-		Msg("service stopped")
-
-	// buffered channel to listen for shutdown signals
-	shutdown := make(chan os.Signal, 1)
-	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
 	// init http server
 	api := http.Server{
@@ -131,17 +123,20 @@ func run(logger *zerolog.Logger) error {
 		IdleTimeout:  cfg.Web.IdleTimeout,
 	}
 
+	// buffered channel to listen for shutdown signals
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
+
 	// buffered channel to listen for server errors
 	serverErrors := make(chan error, 1)
 	go func() {
 		serverErrors <- api.ListenAndServe()
 	}()
 
-	// block main and wait for shutdown
+	// block main and wait for shutdown or server error
 	select {
 	case err = <-serverErrors:
 		return fmt.Errorf("server error: %w", err)
-
 	case sig := <-shutdown:
 		logger.Info().Timestamp().
 			Str("status", "shutdown").
@@ -149,14 +144,21 @@ func run(logger *zerolog.Logger) error {
 			Any("signal", sig.String()).
 			Msg("service shutting down")
 
+		// give outstanding requests a deadline for completion
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
 		defer cancel()
 
+		// ask listener to shut down and shed the load
 		if err = api.Shutdown(ctx); err != nil {
 			api.Close()
 			return fmt.Errorf("could not stop server gracefully: %w", err)
 		}
 	}
+
+	logger.Info().Timestamp().
+		Str("status", "stopped").
+		Str("host", cfg.Web.APIHost).
+		Msg("service stopped")
 
 	return nil
 }
