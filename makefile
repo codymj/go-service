@@ -1,12 +1,20 @@
 SHELL := /bin/bash
 
+# ==============================================================================
+# testing
+
+# expvarmon -ports=":3310" -vars="build,requests,goroutines,errors,panics,mem:memstats.Alloc"
+
+# ==============================================================================
+# run
+
 run:
 	go run main.go
 
 # ==============================================================================
 # building containers
 
-VERSION := 0.0.1
+VERSION := 0.0.1	# this should match BUILD_VERSION in config.yml
 
 all: api
 api:

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"expvar"
 	"fmt"
 	"github.com/codymj/go-service/app/services/api/handlers"
 	"net/http"
@@ -19,6 +20,10 @@ import (
 var (
 	Registry *viper.Viper
 )
+
+type App struct {
+	BuildVersion string
+}
 
 type Web struct {
 	APIHost         string
@@ -65,8 +70,12 @@ func run(logger *zerolog.Logger) error {
 
 	// initialize config
 	cfg := struct {
+		App App
 		Web Web
 	}{
+		App: App{
+			Registry.GetString("BUILD_VERSION"),
+		},
 		Web: Web{
 			Registry.GetString("API_HOST"),
 			Registry.GetString("DEBUG_HOST"),
@@ -76,6 +85,7 @@ func run(logger *zerolog.Logger) error {
 			Registry.GetDuration("SHUTDOWN_TIMEOUT"),
 		},
 	}
+	expvar.NewString("build").Set(cfg.App.BuildVersion)
 
 	// start debug service
 	logger.Info().Timestamp().
@@ -83,9 +93,8 @@ func run(logger *zerolog.Logger) error {
 		Str("host", cfg.Web.DebugHost).
 		Msg("debug router started")
 
-	debugMux := handlers.DebugStdLibMux()
-
 	// start debug service
+	debugMux := handlers.DebugStdLibMux()
 	go func() {
 		err = http.ListenAndServe(cfg.Web.DebugHost, debugMux)
 		if err != nil {
@@ -100,6 +109,7 @@ func run(logger *zerolog.Logger) error {
 	// start api service
 	logger.Info().Timestamp().
 		Str("status", "started").
+		Str("build", cfg.App.BuildVersion).
 		Str("host", cfg.Web.APIHost).
 		Int("GOMAXPROCS", runtime.GOMAXPROCS(0)).
 		Msg("service started")
