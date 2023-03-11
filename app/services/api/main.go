@@ -26,7 +26,7 @@ type App struct {
 }
 
 type Web struct {
-	APIHost         string
+	ApiHost         string
 	DebugHost       string
 	ReadTimeout     time.Duration
 	WriteTimeout    time.Duration
@@ -94,7 +94,7 @@ func run(logger *zerolog.Logger) error {
 		Msg("debug router started")
 
 	// start debug service
-	debugMux := handlers.DebugStdLibMux()
+	debugMux := handlers.DebugMux(cfg.App.BuildVersion, logger)
 	go func() {
 		err = http.ListenAndServe(cfg.Web.DebugHost, debugMux)
 		if err != nil {
@@ -110,22 +110,28 @@ func run(logger *zerolog.Logger) error {
 	logger.Info().Timestamp().
 		Str("status", "started").
 		Str("build", cfg.App.BuildVersion).
-		Str("host", cfg.Web.APIHost).
+		Str("host", cfg.Web.ApiHost).
 		Int("GOMAXPROCS", runtime.GOMAXPROCS(0)).
 		Msg("service started")
-
-	// init http server
-	api := http.Server{
-		Addr:         cfg.Web.APIHost,
-		Handler:      nil,
-		ReadTimeout:  cfg.Web.ReadTimeout,
-		WriteTimeout: cfg.Web.WriteTimeout,
-		IdleTimeout:  cfg.Web.IdleTimeout,
-	}
 
 	// buffered channel to listen for shutdown signals
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
+
+	// construct api mux
+	apiMux := handlers.ApiMux(handlers.ApiMuxConfig{
+		Shutdown: shutdown,
+		Logger:   logger,
+	})
+
+	// init http server
+	api := http.Server{
+		Addr:         cfg.Web.ApiHost,
+		Handler:      apiMux,
+		ReadTimeout:  cfg.Web.ReadTimeout,
+		WriteTimeout: cfg.Web.WriteTimeout,
+		IdleTimeout:  cfg.Web.IdleTimeout,
+	}
 
 	// buffered channel to listen for server errors
 	serverErrors := make(chan error, 1)
@@ -140,7 +146,7 @@ func run(logger *zerolog.Logger) error {
 	case sig := <-shutdown:
 		logger.Info().Timestamp().
 			Str("status", "shutdown").
-			Str("host", cfg.Web.APIHost).
+			Str("host", cfg.Web.ApiHost).
 			Any("signal", sig.String()).
 			Msg("service shutting down")
 
@@ -157,7 +163,7 @@ func run(logger *zerolog.Logger) error {
 
 	logger.Info().Timestamp().
 		Str("status", "stopped").
-		Str("host", cfg.Web.APIHost).
+		Str("host", cfg.Web.ApiHost).
 		Msg("service stopped")
 
 	return nil
