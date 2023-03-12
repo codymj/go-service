@@ -21,11 +21,11 @@ var (
 	Registry *viper.Viper
 )
 
-type App struct {
+type AppCfg struct {
 	BuildVersion string
 }
 
-type Web struct {
+type WebCfg struct {
 	ApiHost         string
 	DebugHost       string
 	ReadTimeout     time.Duration
@@ -70,13 +70,13 @@ func run(logger *zerolog.Logger) error {
 
 	// initialize config
 	cfg := struct {
-		App App
-		Web Web
+		AppCfg AppCfg
+		WebCfg WebCfg
 	}{
-		App: App{
+		AppCfg: AppCfg{
 			Registry.GetString("BUILD_VERSION"),
 		},
-		Web: Web{
+		WebCfg: WebCfg{
 			Registry.GetString("API_HOST"),
 			Registry.GetString("DEBUG_HOST"),
 			Registry.GetDuration("READ_TIMEOUT"),
@@ -85,22 +85,22 @@ func run(logger *zerolog.Logger) error {
 			Registry.GetDuration("SHUTDOWN_TIMEOUT"),
 		},
 	}
-	expvar.NewString("build").Set(cfg.App.BuildVersion)
+	expvar.NewString("build").Set(cfg.AppCfg.BuildVersion)
 
 	// start debug service
 	logger.Info().Timestamp().
 		Str("status", "started").
-		Str("host", cfg.Web.DebugHost).
+		Str("host", cfg.WebCfg.DebugHost).
 		Msg("debug router started")
 
 	// start debug service
-	debugMux := handlers.DebugMux(cfg.App.BuildVersion, logger)
+	debugMux := handlers.DebugMux(cfg.AppCfg.BuildVersion, logger)
 	go func() {
-		err = http.ListenAndServe(cfg.Web.DebugHost, debugMux)
+		err = http.ListenAndServe(cfg.WebCfg.DebugHost, debugMux)
 		if err != nil {
 			logger.Error().Timestamp().
 				Str("status", "shutdown").
-				Str("host", cfg.Web.DebugHost).
+				Str("host", cfg.WebCfg.DebugHost).
 				Err(err).
 				Msg("debug service shutting down")
 		}
@@ -109,8 +109,8 @@ func run(logger *zerolog.Logger) error {
 	// start api service
 	logger.Info().Timestamp().
 		Str("status", "started").
-		Str("build", cfg.App.BuildVersion).
-		Str("host", cfg.Web.ApiHost).
+		Str("build", cfg.AppCfg.BuildVersion).
+		Str("host", cfg.WebCfg.ApiHost).
 		Int("GOMAXPROCS", runtime.GOMAXPROCS(0)).
 		Msg("service started")
 
@@ -126,11 +126,11 @@ func run(logger *zerolog.Logger) error {
 
 	// init http server
 	api := http.Server{
-		Addr:         cfg.Web.ApiHost,
+		Addr:         cfg.WebCfg.ApiHost,
 		Handler:      apiMux,
-		ReadTimeout:  cfg.Web.ReadTimeout,
-		WriteTimeout: cfg.Web.WriteTimeout,
-		IdleTimeout:  cfg.Web.IdleTimeout,
+		ReadTimeout:  cfg.WebCfg.ReadTimeout,
+		WriteTimeout: cfg.WebCfg.WriteTimeout,
+		IdleTimeout:  cfg.WebCfg.IdleTimeout,
 	}
 
 	// buffered channel to listen for server errors
@@ -146,12 +146,12 @@ func run(logger *zerolog.Logger) error {
 	case sig := <-shutdown:
 		logger.Info().Timestamp().
 			Str("status", "shutdown").
-			Str("host", cfg.Web.ApiHost).
+			Str("host", cfg.WebCfg.ApiHost).
 			Any("signal", sig.String()).
 			Msg("service shutting down")
 
 		// give outstanding requests a deadline for completion
-		ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.WebCfg.ShutdownTimeout)
 		defer cancel()
 
 		// ask listener to shut down and shed the load
@@ -163,7 +163,7 @@ func run(logger *zerolog.Logger) error {
 
 	logger.Info().Timestamp().
 		Str("status", "stopped").
-		Str("host", cfg.Web.ApiHost).
+		Str("host", cfg.WebCfg.ApiHost).
 		Msg("service stopped")
 
 	return nil

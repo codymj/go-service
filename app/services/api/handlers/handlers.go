@@ -4,7 +4,7 @@ import (
 	"expvar"
 	"github.com/codymj/go-service/app/services/api/handlers/debug/checkgroup"
 	"github.com/codymj/go-service/app/services/api/handlers/v1/testgroup"
-	"github.com/dimfeld/httptreemux/v5"
+	"github.com/codymj/go-service/foundation/web"
 	"github.com/rs/zerolog"
 	"net/http"
 	"net/http/pprof"
@@ -43,22 +43,32 @@ func DebugMux(build string, logger *zerolog.Logger) http.Handler {
 	return mux
 }
 
-// ApiMuxConfig contains all the mandatory systems required by handlers
+// ApiMuxConfig contains all the mandatory systems required by handlers.
 type ApiMuxConfig struct {
 	Shutdown chan os.Signal
 	Logger   *zerolog.Logger
 }
 
-// ApiMux constructs an http.Handler with all application routes defined
-func ApiMux(cfg ApiMuxConfig) *httptreemux.ContextMux {
-	// register api check endpoints
+// ApiMux constructs an http.Handler with all application routes defined.
+func ApiMux(cfg ApiMuxConfig) *web.App {
+	// create new web application
+	app := web.NewApp(cfg.Shutdown)
+
+	// bind v1 routes
+	v1(app, cfg)
+
+	return app
+}
+
+// v1 binds all the v1 routes
+func v1(app *web.App, cfg ApiMuxConfig) {
+	const version = "v1"
+
+	// create v1 test handler
 	tgh := testgroup.Handlers{
 		Logger: cfg.Logger,
 	}
 
-	// build mux
-	mux := httptreemux.NewContextMux()
-	mux.Handle(http.MethodGet, "/v1/test", tgh.Test)
-
-	return mux
+	// register test routes
+	app.Handle(http.MethodGet, version, "/test", tgh.Test)
 }

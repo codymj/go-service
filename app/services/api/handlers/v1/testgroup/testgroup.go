@@ -1,7 +1,8 @@
 package testgroup
 
 import (
-	"encoding/json"
+	"context"
+	"github.com/codymj/go-service/foundation/web"
 	"github.com/rs/zerolog"
 	"net/http"
 )
@@ -12,14 +13,13 @@ type Handlers struct {
 }
 
 // Test handler for development
-func (h Handlers) Test(w http.ResponseWriter, r *http.Request) {
+func (h Handlers) Test(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	// ok status
 	data := struct {
 		Status string `json:"status"`
 	}{
 		Status: "ok",
 	}
-	_ = json.NewEncoder(w).Encode(data)
 
 	statusCode := http.StatusOK
 	h.Logger.Info().Timestamp().
@@ -28,4 +28,6 @@ func (h Handlers) Test(w http.ResponseWriter, r *http.Request) {
 		Str("path", r.URL.Path).
 		Str("remoteAddr", r.RemoteAddr).
 		Msg("test")
+
+	return web.Respond(ctx, w, data, statusCode)
 }
