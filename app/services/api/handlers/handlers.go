@@ -4,6 +4,7 @@ import (
 	"expvar"
 	"github.com/codymj/go-service/app/services/api/handlers/debug/checkgroup"
 	"github.com/codymj/go-service/app/services/api/handlers/v1/testgroup"
+	"github.com/codymj/go-service/business/web/mw"
 	"github.com/codymj/go-service/foundation/web"
 	"github.com/rs/zerolog"
 	"net/http"
@@ -52,7 +53,10 @@ type ApiMuxConfig struct {
 // ApiMux constructs an http.Handler with all application routes defined.
 func ApiMux(cfg ApiMuxConfig) *web.App {
 	// create new web application
-	app := web.NewApp(cfg.Shutdown)
+	app := web.NewApp(
+		cfg.Shutdown,
+		mw.Logger(cfg.Logger),
+	)
 
 	// bind v1 routes
 	v1(app, cfg)
