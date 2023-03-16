@@ -3,7 +3,9 @@ SHELL := /bin/bash
 # ==============================================================================
 # testing
 
+# ocker run -p 3310:3310 -p 3300:3300 <imgId>
 # expvarmon -ports=":3310" -vars="build,requests,goroutines,errors,panics,mem:memstats.Alloc"
+# hey -m GET -c 100 -n 10000 http://localhost:3300/v1/test
 
 # ==============================================================================
 # run

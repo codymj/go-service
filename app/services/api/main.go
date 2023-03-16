@@ -93,7 +93,6 @@ func run(logger *zerolog.Logger) error {
 		Str("host", cfg.WebCfg.DebugHost).
 		Msg("debug router started")
 
-	// start debug service
 	debugMux := handlers.DebugMux(cfg.AppCfg.BuildVersion, logger)
 	go func() {
 		err = http.ListenAndServe(cfg.WebCfg.DebugHost, debugMux)

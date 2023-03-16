@@ -56,6 +56,9 @@ func ApiMux(cfg ApiMuxConfig) *web.App {
 	app := web.NewApp(
 		cfg.Shutdown,
 		mw.Logger(cfg.Logger),
+		mw.Errors(cfg.Logger),
+		mw.Metrics(),
+		mw.Panics(),
 	)
 
 	// bind v1 routes
