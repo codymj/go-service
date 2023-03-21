@@ -3,20 +3,28 @@ SHELL := /bin/bash
 # ==============================================================================
 # testing
 
-# ocker run -p 3310:3310 -p 3300:3300 <imgId>
+# docker run -p 3310:3310 -p 3300:3300 <imgId>
 # expvarmon -ports=":3310" -vars="build,requests,goroutines,errors,panics,mem:memstats.Alloc"
 # hey -m GET -c 100 -n 10000 http://localhost:3300/v1/test
+
+# generate public/private keys
+# openssl genpkey -algorithm RSA -out private.pem -pkeyopt rsa_keygen_bits:2048
+# openssl rsa -pubout -in private.pem -out public.pem
 
 # ==============================================================================
 # run
 
 run:
-	go run main.go
+	go run app/services/api/main.go
+
+admin:
+	go run app/tools/admin/main.go
 
 # ==============================================================================
 # building containers
 
-VERSION := 0.0.1	# this should match BUILD_VERSION in config.yml
+# this should match BUILD_VERSION in config.yml
+VERSION := 0.0.1
 
 all: api
 api:
