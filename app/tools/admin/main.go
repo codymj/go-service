@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"io"
@@ -63,12 +64,12 @@ func genToken() error {
 	token := jwt.NewWithClaims(jwt.GetSigningMethod("RS256"), claims)
 	token.Header["kid"] = "1b24502a-4781-47cb-99c2-3403c23bedac"
 
-	str, err := token.SignedString(privateKey)
+	tokenStr, err := token.SignedString(privateKey)
 	if err != nil {
 		return err
 	}
 	fmt.Println("===== TOKEN BEGIN =====")
-	fmt.Println(str)
+	fmt.Println(tokenStr)
 	fmt.Println("===== TOKEN END =====")
 	fmt.Println()
 
@@ -88,6 +89,38 @@ func genToken() error {
 	if err = pem.Encode(os.Stdout, &publicBlock); err != nil {
 		return fmt.Errorf("error encoding to public file: %w", err)
 	}
+
+	// create token parser
+	parser := jwt.NewParser(jwt.WithValidMethods([]string{"RS256"}))
+
+	// key function
+	keyFunc := func(t *jwt.Token) (any, error) {
+		kid, ok := t.Header["kid"]
+		if !ok {
+			return nil, nil
+		}
+		kidId, ok := kid.(string)
+		if !ok {
+			return nil, nil
+		}
+		fmt.Printf("KID: %v\n", kidId)
+		return &privateKey.PublicKey, nil
+	}
+
+	// token
+	var parsedClaims struct {
+		jwt.RegisteredClaims
+		Roles []string
+	}
+	parsedToken, err := parser.ParseWithClaims(tokenStr, &parsedClaims, keyFunc)
+	if err != nil {
+		return err
+	}
+	if !parsedToken.Valid {
+		return errors.New("invalid token")
+	}
+	fmt.Println("token validated")
+	fmt.Println()
 
 	return nil
 }
