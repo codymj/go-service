@@ -33,7 +33,7 @@ func NewMap(store map[string]*rsa.PrivateKey) *KeyStore {
 	}
 }
 
-// NewFS constructs a KeyStore based on a set of PEM files rooted inside of a
+// NewFS constructs a KeyStore based on a set of PEM files rooted inside a
 // directory. The name of each PEM file will be used as the key ID.
 func NewFS(fsys fs.FS) (*KeyStore, error) {
 	// create key store
