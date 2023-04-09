@@ -4,6 +4,7 @@ SHELL := /bin/bash
 # testing
 
 # docker run -p 3310:3310 -p 3300:3300 <imgId>
+# docker image prune -a
 # expvarmon -ports=":3310" -vars="build,requests,goroutines,errors,panics,mem:memstats.Alloc"
 # hey -m GET -c 100 -n 10000 http://localhost:3300/v1/test
 
@@ -23,6 +24,9 @@ run:
 
 admin:
 	go run app/tools/admin/main.go
+
+test:
+	go test ./... -count=1
 
 # ==============================================================================
 # building containers
