@@ -38,7 +38,7 @@ type WebCfg struct {
 
 type AuthCfg struct {
 	KeysFolder string `conf:"default:zarf/keys/"`
-	ActiveKid  string `conf:default:1b24502a-4781-47cb-99c2-3403c23bedac`
+	ActiveKid  string `conf:"default:1b24502a-4781-47cb-99c2-3403c23bedac"`
 }
 
 // main service function =======================================================
