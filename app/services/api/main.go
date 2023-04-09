@@ -5,6 +5,8 @@ import (
 	"expvar"
 	"fmt"
 	"github.com/codymj/go-service/app/services/api/handlers"
+	"github.com/codymj/go-service/business/sys/auth"
+	"github.com/codymj/go-service/foundation/keystore"
 	"net/http"
 	"os"
 	"os/signal"
@@ -32,6 +34,11 @@ type WebCfg struct {
 	WriteTimeout    time.Duration
 	IdleTimeout     time.Duration
 	ShutdownTimeout time.Duration
+}
+
+type AuthCfg struct {
+	KeysFolder string `conf:"default:zarf/keys/"`
+	ActiveKid  string `conf:default:1b24502a-4781-47cb-99c2-3403c23bedac`
 }
 
 // main service function =======================================================
@@ -70,8 +77,9 @@ func run(logger *zerolog.Logger) error {
 
 	// initialize config
 	cfg := struct {
-		AppCfg AppCfg
-		WebCfg WebCfg
+		AppCfg  AppCfg
+		WebCfg  WebCfg
+		AuthCfg AuthCfg
 	}{
 		AppCfg: AppCfg{
 			Registry.GetString("BUILD_VERSION"),
@@ -83,6 +91,10 @@ func run(logger *zerolog.Logger) error {
 			Registry.GetDuration("WRITE_TIMEOUT"),
 			Registry.GetDuration("IDLE_TIMEOUT"),
 			Registry.GetDuration("SHUTDOWN_TIMEOUT"),
+		},
+		AuthCfg: AuthCfg{
+			KeysFolder: "zarf/keys/",
+			ActiveKid:  "1b24502a-4781-47cb-99c2-3403c23bedac",
 		},
 	}
 	expvar.NewString("build").Set(cfg.AppCfg.BuildVersion)
@@ -117,10 +129,26 @@ func run(logger *zerolog.Logger) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
+	// start authentication support
+	logger.Info().Timestamp().
+		Str("status", "started").
+		Msg("starting authentication support")
+
+	keys, err := keystore.NewFS(os.DirFS(cfg.AuthCfg.KeysFolder))
+	if err != nil {
+		return fmt.Errorf("error reading keys folder: %w", err)
+	}
+
+	authorizer, err := auth.New(cfg.AuthCfg.ActiveKid, keys)
+	if err != nil {
+		return fmt.Errorf("error constructing auth: %w", err)
+	}
+
 	// construct api mux
 	apiMux := handlers.ApiMux(handlers.ApiMuxConfig{
 		Shutdown: shutdown,
 		Logger:   logger,
+		Auth:     authorizer,
 	})
 
 	// init http server

@@ -4,6 +4,7 @@ import (
 	"expvar"
 	"github.com/codymj/go-service/app/services/api/handlers/debug/checkgroup"
 	"github.com/codymj/go-service/app/services/api/handlers/v1/testgroup"
+	"github.com/codymj/go-service/business/sys/auth"
 	"github.com/codymj/go-service/business/web/mw"
 	"github.com/codymj/go-service/foundation/web"
 	"github.com/rs/zerolog"
@@ -48,6 +49,7 @@ func DebugMux(build string, logger *zerolog.Logger) http.Handler {
 type ApiMuxConfig struct {
 	Shutdown chan os.Signal
 	Logger   *zerolog.Logger
+	Auth     *auth.Auth
 }
 
 // ApiMux constructs an http.Handler with all application routes defined.
@@ -78,4 +80,5 @@ func v1(app *web.App, cfg ApiMuxConfig) {
 
 	// register test routes
 	app.Handle(http.MethodGet, version, "/test", tgh.Test)
+	app.Handle(http.MethodGet, version, "/testauth", tgh.Test, mw.Authenticate(cfg.Auth), mw.Authorize("admin"))
 }

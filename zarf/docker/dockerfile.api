@@ -37,6 +37,7 @@ ARG BUILD_REF
 
 COPY --from=build2 /app/app/services/api/app_binary /app/app_binary
 COPY --from=build2 /app/conf.yml /app/conf.yml
+COPY --from=build2 /app/zarf/keys/. /app/zarf/keys/.
 WORKDIR /app
 ENTRYPOINT ["/app/app_binary"]
 
