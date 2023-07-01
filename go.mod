@@ -6,6 +6,8 @@ require (
 	github.com/dimfeld/httptreemux/v5 v5.5.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/uuid v1.3.0
+	github.com/jmoiron/sqlx v1.3.5
+	github.com/lib/pq v1.2.0
 	github.com/rs/zerolog v1.29.0
 	github.com/spf13/viper v1.15.0
 	go.uber.org/automaxprocs v1.5.1

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/codymj/go-service/app/services/api/handlers"
 	"github.com/codymj/go-service/business/sys/auth"
+	"github.com/codymj/go-service/business/sys/database"
 	"github.com/codymj/go-service/foundation/keystore"
 	"net/http"
 	"os"
@@ -80,6 +81,7 @@ func run(logger *zerolog.Logger) error {
 		AppCfg  AppCfg
 		WebCfg  WebCfg
 		AuthCfg AuthCfg
+		DbCfg   database.Config
 	}{
 		AppCfg: AppCfg{
 			Registry.GetString("BUILD_VERSION"),
@@ -96,8 +98,36 @@ func run(logger *zerolog.Logger) error {
 			KeysFolder: "zarf/keys/",
 			ActiveKid:  "1b24502a-4781-47cb-99c2-3403c23bedac",
 		},
+		DbCfg: database.Config{
+			User:         Registry.GetString("DB_USER"),
+			Password:     Registry.GetString("DB_PASSWORD"),
+			Host:         Registry.GetString("DB_HOST"),
+			Name:         Registry.GetString("DB_NAME"),
+			MaxIdleConns: Registry.GetInt("DB_MAX_IDLE_CONNS"),
+			MaxOpenConns: Registry.GetInt("DB_MAX_OPEN_CONNS"),
+			DisableTls:   Registry.GetBool("DB_TLS_DISABLED"),
+		},
 	}
 	expvar.NewString("build").Set(cfg.AppCfg.BuildVersion)
+
+	// database connectivity
+	logger.Info().Timestamp().
+		Str("status", "started").
+		Str("host", cfg.DbCfg.Host).
+		Msg("initializing database connection")
+
+	db, err := database.Open(cfg.DbCfg)
+	if err != nil {
+		return fmt.Errorf("connecting to db: %w", err)
+	}
+	defer func() {
+		logger.Info().Timestamp().
+			Str("status", "stopped").
+			Str("host", cfg.DbCfg.Host).
+			Msg("closing database connection")
+
+		db.Close()
+	}()
 
 	// start debug service
 	logger.Info().Timestamp().
