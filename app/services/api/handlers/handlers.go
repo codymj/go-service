@@ -7,6 +7,7 @@ import (
 	"github.com/codymj/go-service/business/sys/auth"
 	"github.com/codymj/go-service/business/web/mw"
 	"github.com/codymj/go-service/foundation/web"
+	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog"
 	"net/http"
 	"net/http/pprof"
@@ -30,11 +31,12 @@ func DebugStdLibMux() *http.ServeMux {
 
 // DebugMux registers all the debug standard library routes and then custom
 // debug application routes for the service
-func DebugMux(build string, logger *zerolog.Logger) http.Handler {
+func DebugMux(build string, logger *zerolog.Logger, db *sqlx.DB) http.Handler {
 	// register debug check endpoints
 	cgh := checkgroup.Handlers{
 		Build:  build,
 		Logger: logger,
+		DB:     db,
 	}
 
 	// build mux
@@ -50,6 +52,7 @@ type ApiMuxConfig struct {
 	Shutdown chan os.Signal
 	Logger   *zerolog.Logger
 	Auth     *auth.Auth
+	DB       *sqlx.DB
 }
 
 // ApiMux constructs an http.Handler with all application routes defined.

@@ -40,7 +40,7 @@ func Open(cfg Config) (*sqlx.DB, error) {
 	}
 
 	q := make(url.Values)
-	q.Set("sslMode", sslMode)
+	q.Set("sslmode", sslMode)
 	q.Set("timezone", "utc")
 
 	u := url.URL{
