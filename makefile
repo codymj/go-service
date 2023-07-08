@@ -16,6 +16,8 @@ SHELL := /bin/bash
 # do "make admin" and "export TOKEN=<token>"
 # curl -w "\n" -il -H "Authorization: Bearer ${TOKEN}" http://localhost:3300/v1/testauth
 
+# dblab --host 127.0.0.1 --user postgres --db postgres --pass <password> --schema public --ssl disable --port 5432 --driver postgres --limit 50
+
 # ==============================================================================
 # run
 
