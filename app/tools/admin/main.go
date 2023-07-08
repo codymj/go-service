@@ -1,181 +1,94 @@
 package main
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
-	"errors"
+	"flag"
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
-	"io"
+	"github.com/codymj/go-service/app/tools/admin/commands"
+	"github.com/codymj/go-service/business/sys/database"
+	"github.com/codymj/go-service/foundation/keystore"
+	"github.com/rs/zerolog"
+	"github.com/spf13/viper"
 	"os"
-	"time"
 )
 
+var (
+	Registry *viper.Viper
+)
+
+type config struct {
+	AuthCfg keystore.AuthCfg
+	DbCfg   database.Config
+}
+
 func main() {
-	err := genToken()
+	// init logger
+	logger := zerolog.New(os.Stdout).
+		Level(zerolog.InfoLevel)
+
+	// run
+	err := run(&logger)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 }
 
-// genToken generates jwt token
-func genToken() error {
-	// open key file
-	f, err := os.Open("zarf/keys/1b24502a-4781-47cb-99c2-3403c23bedac.pem")
+// run service =================================================================
+func run(logger *zerolog.Logger) error {
+	// set config parameters from conf.yml
+	viper.AutomaticEnv()
+	Registry = viper.GetViper()
+	Registry.AddConfigPath(".")
+	Registry.AddConfigPath("../../../..")
+	Registry.SetConfigFile("conf.yml")
+	err := Registry.ReadInConfig()
 	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	// read pem
-	privatePem, err := io.ReadAll(io.LimitReader(f, 1024*1024))
-	if err != nil {
-		return err
+		return fmt.Errorf("fatal error config file: %w \n", err)
 	}
 
-	// parse key
-	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privatePem)
-	if err != nil {
-		return err
-	}
-
-	// define a set of claims for generating the jwt
-	claims := struct {
-		jwt.RegisteredClaims
-		Roles []string
+	// initialize config
+	cfg := struct {
+		AuthCfg keystore.AuthCfg
+		DbCfg   database.Config
 	}{
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:  "go-service project",
-			Subject: "12345",
-			ExpiresAt: &jwt.NumericDate{
-				Time: time.Now().Add(8760 * time.Hour).UTC(),
-			},
-			IssuedAt: &jwt.NumericDate{
-				Time: time.Now().UTC(),
-			},
+		AuthCfg: keystore.AuthCfg{
+			KeysFolder: "zarf/keys/",
+			ActiveKid:  "1b24502a-4781-47cb-99c2-3403c23bedac",
 		},
-		Roles: []string{"admin"},
+		DbCfg: database.Config{
+			User:         Registry.GetString("DB_USER"),
+			Password:     Registry.GetString("DB_PASSWORD"),
+			Host:         Registry.GetString("DB_HOST"),
+			Name:         Registry.GetString("DB_NAME"),
+			MaxIdleConns: Registry.GetInt("DB_MAX_IDLE_CONNS"),
+			MaxOpenConns: Registry.GetInt("DB_MAX_OPEN_CONNS"),
+			DisableTls:   Registry.GetBool("DB_TLS_DISABLED"),
+		},
 	}
 
-	// generate token and set key id
-	token := jwt.NewWithClaims(jwt.GetSigningMethod("RS256"), claims)
-	token.Header["kid"] = "1b24502a-4781-47cb-99c2-3403c23bedac"
+	// flags
+	flag.Parse()
 
-	tokenStr, err := token.SignedString(privateKey)
-	if err != nil {
-		return err
-	}
-	fmt.Println("===== TOKEN BEGIN =====")
-	fmt.Println(tokenStr)
-	fmt.Println("===== TOKEN END =====")
-	fmt.Println()
-
-	// marshal the public key
-	asn1Bytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
-	if err != nil {
-		return fmt.Errorf("error marshalling public key: %w", err)
-	}
-
-	// construct pem block for the public key
-	publicBlock := pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: asn1Bytes,
-	}
-
-	// write the public key to file
-	if err = pem.Encode(os.Stdout, &publicBlock); err != nil {
-		return fmt.Errorf("error encoding to public file: %w", err)
-	}
-
-	// create token parser
-	parser := jwt.NewParser(jwt.WithValidMethods([]string{"RS256"}))
-
-	// key function
-	keyFunc := func(t *jwt.Token) (any, error) {
-		kid, ok := t.Header["kid"]
-		if !ok {
-			return nil, nil
-		}
-		kidId, ok := kid.(string)
-		if !ok {
-			return nil, nil
-		}
-		fmt.Printf("KID: %v\n", kidId)
-		return &privateKey.PublicKey, nil
-	}
-
-	// token
-	var parsedClaims struct {
-		jwt.RegisteredClaims
-		Roles []string
-	}
-	parsedToken, err := parser.ParseWithClaims(tokenStr, &parsedClaims, keyFunc)
-	if err != nil {
-		return err
-	}
-	if !parsedToken.Valid {
-		return errors.New("invalid token")
-	}
-	fmt.Println("token validated")
-	fmt.Println()
-
-	return nil
+	return processCommands(logger, cfg)
 }
 
-// genKeys creates a x509 public/private key pair for auth tokens.
-func genKeys() error {
-	// generate private key
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return err
+// processCommands handles the execution of the commands specified on
+// the command line.
+func processCommands(logger *zerolog.Logger, cfg config) error {
+	switch os.Args[1] {
+	case "genkeys":
+		if err := commands.GenKeys(); err != nil {
+			return fmt.Errorf("commands.GenKeys(): %w", err)
+		}
+	case "gentoken":
+		if err := commands.GenToken(logger, cfg.DbCfg, cfg.AuthCfg); err != nil {
+			return fmt.Errorf("commands.GenToken(): %w", err)
+		}
+	case "migrate":
+		if err := commands.Migrate(cfg.DbCfg); err != nil {
+			return fmt.Errorf("commands.Migrate(): %w", err)
+		}
 	}
-
-	// create file to hold private key
-	privateFile, err := os.Create("private.pem")
-	if err != nil {
-		return fmt.Errorf("error creating private.pem: %w", err)
-	}
-	defer privateFile.Close()
-
-	// construct pem block for the private key
-	privateBlock := pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
-	}
-
-	// write the private key to file
-	if err = pem.Encode(privateFile, &privateBlock); err != nil {
-		return fmt.Errorf("error encoding to private file: %w", err)
-	}
-
-	// marshal the public key
-	asn1Bytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
-	if err != nil {
-		return fmt.Errorf("error marshalling public key: %w", err)
-	}
-
-	// create file to hold public key
-	publicFile, err := os.Create("public.pem")
-	if err != nil {
-		return fmt.Errorf("error creating public.pem: %w", err)
-	}
-	defer publicFile.Close()
-
-	// construct pem block for the public key
-	publicBlock := pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: asn1Bytes,
-	}
-
-	// write the public key to file
-	if err = pem.Encode(publicFile, &publicBlock); err != nil {
-		return fmt.Errorf("error encoding to public file: %w", err)
-	}
-
-	fmt.Println("public and private keys generated successfully")
 
 	return nil
 }

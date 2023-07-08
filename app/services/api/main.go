@@ -37,11 +37,6 @@ type WebCfg struct {
 	ShutdownTimeout time.Duration
 }
 
-type AuthCfg struct {
-	KeysFolder string `conf:"default:zarf/keys/"`
-	ActiveKid  string `conf:"default:1b24502a-4781-47cb-99c2-3403c23bedac"`
-}
-
 // main service function =======================================================
 func main() {
 	// init logger
@@ -80,7 +75,7 @@ func run(logger *zerolog.Logger) error {
 	cfg := struct {
 		AppCfg  AppCfg
 		WebCfg  WebCfg
-		AuthCfg AuthCfg
+		AuthCfg keystore.AuthCfg
 		DbCfg   database.Config
 	}{
 		AppCfg: AppCfg{
@@ -94,7 +89,7 @@ func run(logger *zerolog.Logger) error {
 			Registry.GetDuration("IDLE_TIMEOUT"),
 			Registry.GetDuration("SHUTDOWN_TIMEOUT"),
 		},
-		AuthCfg: AuthCfg{
+		AuthCfg: keystore.AuthCfg{
 			KeysFolder: "zarf/keys/",
 			ActiveKid:  "1b24502a-4781-47cb-99c2-3403c23bedac",
 		},

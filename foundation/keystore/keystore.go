@@ -12,6 +12,12 @@ import (
 	"sync"
 )
 
+// AuthCfg for setting up key store
+type AuthCfg struct {
+	KeysFolder string
+	ActiveKid  string
+}
+
 // KeyStore represents an in-memory store implementation of the KeyStorer
 // interface for use with the auth package.
 type KeyStore struct {

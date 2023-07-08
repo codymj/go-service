@@ -22,6 +22,8 @@ SHELL := /bin/bash
 run:
 	go run app/services/api/main.go
 
+# make admin [command]
+#	migrate: migrates database
 admin:
 	go run app/tools/admin/main.go
 
