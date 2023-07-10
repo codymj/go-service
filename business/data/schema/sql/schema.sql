@@ -19,7 +19,7 @@ CREATE TABLE products
     product_id UUID,
     name       TEXT,
     cost       INT,
-    quantitiy  INT,
+    quantity  INT,
     user_id    UUID,
     created    TIMESTAMP,
     modified   TIMESTAMP,

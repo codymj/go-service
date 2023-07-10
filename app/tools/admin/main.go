@@ -88,6 +88,10 @@ func processCommands(logger *zerolog.Logger, cfg config) error {
 		if err := commands.Migrate(cfg.DbCfg); err != nil {
 			return fmt.Errorf("commands.Migrate(): %w", err)
 		}
+	case "seed":
+		if err := commands.Seed(cfg.DbCfg); err != nil {
+			return fmt.Errorf("commands.Seed(): %w", err)
+		}
 	}
 
 	return nil

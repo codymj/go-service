@@ -19,16 +19,28 @@ SHELL := /bin/bash
 # dblab --host 127.0.0.1 --user postgres --db postgres --pass <password> --schema public --ssl disable --port 5432 --driver postgres --limit 50
 
 # ==============================================================================
-# run
 
+# run service
 run:
 	go run app/services/api/main.go
 
-# make admin [command]
-#	migrate: migrates database
-admin:
-	go run app/tools/admin/main.go
+# creates a x509 public/private key pair for auth tokens
+genkeys:
+	go run app/tools/admin/main.go genkeys
 
+# generates jwt token
+gentoken:
+	go run app/tools/admin/main.go gentoken
+
+# migrates database
+migrate:
+	go run app/tools/admin/main.go migrate
+
+# seeds database with test data
+seed:
+	go run app/tools/admin/main.go seed
+
+# run all tests
 test:
 	go test ./... -count=1
 
