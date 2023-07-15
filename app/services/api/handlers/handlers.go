@@ -4,6 +4,8 @@ import (
 	"expvar"
 	"github.com/codymj/go-service/app/services/api/handlers/debug/checkgroup"
 	"github.com/codymj/go-service/app/services/api/handlers/v1/testgroup"
+	"github.com/codymj/go-service/app/services/api/handlers/v1/usergroup"
+	usercore "github.com/codymj/go-service/business/core/user"
 	"github.com/codymj/go-service/business/sys/auth"
 	"github.com/codymj/go-service/business/web/mw"
 	"github.com/codymj/go-service/foundation/web"
@@ -72,16 +74,27 @@ func ApiMux(cfg ApiMuxConfig) *web.App {
 	return app
 }
 
-// v1 binds all the v1 routes
+// v1 binds all the v1 routes.
 func v1(app *web.App, cfg ApiMuxConfig) {
+	// set API version
 	const version = "v1"
 
-	// create v1 test handler
+	// test handler and routes
 	tgh := testgroup.Handlers{
 		Logger: cfg.Logger,
 	}
-
-	// register test routes
 	app.Handle(http.MethodGet, version, "/test", tgh.Test)
 	app.Handle(http.MethodGet, version, "/testauth", tgh.Test, mw.Authenticate(cfg.Auth), mw.Authorize("admin"))
+
+	// user handler and routes
+	ugh := usergroup.Handlers{
+		Auth: cfg.Auth,
+		User: usercore.NewCore(cfg.Logger, cfg.DB),
+	}
+	app.Handle(http.MethodGet, version, "/users/token", ugh.Token)
+	app.Handle(http.MethodGet, version, "/users/:page/:rows", ugh.Query, mw.Authenticate(cfg.Auth), mw.Authorize(auth.RoleAdmin))
+	app.Handle(http.MethodGet, version, "/users/:id", ugh.QueryById, mw.Authenticate(cfg.Auth))
+	app.Handle(http.MethodPost, version, "/users", ugh.Create, mw.Authenticate(cfg.Auth), mw.Authorize(auth.RoleAdmin))
+	app.Handle(http.MethodPut, version, "/users/:id", ugh.Update, mw.Authenticate(cfg.Auth), mw.Authorize(auth.RoleAdmin))
+	app.Handle(http.MethodDelete, version, "/users/:id", ugh.Delete, mw.Authenticate(cfg.Auth), mw.Authorize(auth.RoleAdmin))
 }
