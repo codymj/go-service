@@ -91,10 +91,43 @@ func v1(app *web.App, cfg ApiMuxConfig) {
 		Auth: cfg.Auth,
 		User: usercore.NewCore(cfg.Logger, cfg.DB),
 	}
-	app.Handle(http.MethodGet, version, "/users/token", ugh.Token)
-	app.Handle(http.MethodGet, version, "/users/:page/:rows", ugh.Query, mw.Authenticate(cfg.Auth), mw.Authorize(auth.RoleAdmin))
-	app.Handle(http.MethodGet, version, "/users/:id", ugh.QueryById, mw.Authenticate(cfg.Auth))
-	app.Handle(http.MethodPost, version, "/users", ugh.Create, mw.Authenticate(cfg.Auth), mw.Authorize(auth.RoleAdmin))
-	app.Handle(http.MethodPut, version, "/users/:id", ugh.Update, mw.Authenticate(cfg.Auth), mw.Authorize(auth.RoleAdmin))
-	app.Handle(http.MethodDelete, version, "/users/:id", ugh.Delete, mw.Authenticate(cfg.Auth), mw.Authorize(auth.RoleAdmin))
+	app.Handle(
+		http.MethodGet,
+		version,
+		"/users/token",
+		ugh.Token)
+	app.Handle(
+		http.MethodGet,
+		version,
+		"/users/:page/:rows",
+		ugh.Query,
+		mw.Authenticate(cfg.Auth),
+		mw.Authorize(auth.RoleAdmin))
+	app.Handle(
+		http.MethodGet,
+		version,
+		"/users/:id",
+		ugh.QueryById,
+		mw.Authenticate(cfg.Auth))
+	app.Handle(
+		http.MethodPost,
+		version,
+		"/users",
+		ugh.Create,
+		mw.Authenticate(cfg.Auth),
+		mw.Authorize(auth.RoleAdmin))
+	app.Handle(
+		http.MethodPut,
+		version,
+		"/users/:id",
+		ugh.Update,
+		mw.Authenticate(cfg.Auth),
+		mw.Authorize(auth.RoleAdmin))
+	app.Handle(
+		http.MethodDelete,
+		version,
+		"/users/:id",
+		ugh.Delete,
+		mw.Authenticate(cfg.Auth),
+		mw.Authorize(auth.RoleAdmin))
 }

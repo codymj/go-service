@@ -8,8 +8,8 @@ import (
 
 // expected values for Claims.Roles.
 const (
-	RoleAdmin = "admin"
-	RoleUser  = "user"
+	RoleAdmin = "ADMIN"
+	RoleUser  = "USER"
 )
 
 // Claims represents the authorization claims transmitted via a JWT.
