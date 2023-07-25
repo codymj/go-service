@@ -3,10 +3,16 @@ package tests
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"fmt"
 	"github.com/codymj/go-service/business/data/schema"
+	"github.com/codymj/go-service/business/data/store/user"
+	"github.com/codymj/go-service/business/sys/auth"
 	"github.com/codymj/go-service/business/sys/database"
 	"github.com/codymj/go-service/foundation/docker"
+	"github.com/codymj/go-service/foundation/keystore"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog"
 	"io"
@@ -20,6 +26,35 @@ const (
 	Success = "\u2713"
 	Failed  = "\u2717"
 )
+
+// Test owns state for running and shutting down tests.
+type Test struct {
+	Db       *sqlx.DB
+	Logger   *zerolog.Logger
+	Auth     *auth.Auth
+	Teardown func()
+	t        *testing.T
+}
+
+// Token generates an authenticated token for a user.
+func (t *Test) Token(email, password string) string {
+	t.t.Log("generating token for test...")
+
+	// init store
+	store := user.NewStore(t.Logger, t.Db)
+	claims, err := store.Authenticate(context.Background(), time.Now(), email, password)
+	if err != nil {
+		t.t.Fatal(err)
+	}
+
+	// generate token
+	token, err := t.Auth.GenerateToken(claims)
+	if err != nil {
+		t.t.Fatal(err)
+	}
+
+	return token
+}
 
 // DbContainer provides configuration for a container to run.
 type DbContainer struct {
@@ -86,6 +121,34 @@ func NewUnit(t *testing.T, dbc DbContainer) (*zerolog.Logger, *sqlx.DB, func()) 
 	}
 
 	return &logger, db, teardown
+}
+
+// NewIntegration creates a database, seeds it and constructs an authenticator.
+func NewIntegration(t *testing.T, dbc DbContainer) *Test {
+	// init test environment
+	logger, db, teardown := NewUnit(t, dbc)
+
+	// create RSA keys to enable authentication
+	keyId := uuid.NewString()
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// build an authenticator using this private key for the key store
+	keyMap := map[string]*rsa.PrivateKey{keyId: privateKey}
+	authr, err := auth.New(keyId, keystore.NewMap(keyMap))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return &Test{
+		Db:       db,
+		Logger:   logger,
+		Auth:     authr,
+		Teardown: teardown,
+		t:        t,
+	}
 }
 
 // StrPtr is a helper to return *string for a string.
