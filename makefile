@@ -48,6 +48,10 @@ seed:
 test:
 	go test ./... -count=1
 
+# update service
+update:
+	go get -t -u ./... && go mod vendor
+
 # ==============================================================================
 # building containers
 
