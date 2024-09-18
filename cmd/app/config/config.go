@@ -7,6 +7,8 @@ import (
 	"github.com/spf13/viper"
 	"go-service.codymj.io/cmd/app/router/user"
 	"go-service.codymj.io/internal/database"
+	"go-service.codymj.io/internal/password"
+	userdao "go-service.codymj.io/internal/user/dao"
 	"time"
 )
 

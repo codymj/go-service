@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"go-service.codymj.io/cmd/app/config"
+	"go-service.codymj.io/cmd/app/router"
 	"go-service.codymj.io/cmd/app/util"
 	"go-service.codymj.io/internal/database"
 	"log"
@@ -49,22 +50,22 @@ func start() error {
 	}
 
 	// Initialize utility services.
-	validateSvc := config.NewValidateService()
-	passwordSvc := config.NewPasswordService(config.GetPasswordConfig())
+	validateService := config.NewValidateService()
+	passwordService := config.NewPasswordService(config.GetPasswordConfig())
 
 	// Initialize repositories.
-	userRepo := config.NewUserRepository(db, passwordSvc)
+	userRepo := config.NewUserRepository(db, passwordService)
 
 	// Initialize business services.
 	userSvc := config.NewUserService(userRepo)
 
 	// Initialize routes.
 	routeServices := util.Services{
-		ValidatorService: validateSvc,
+		ValidatorService: validateService,
 		UserService:      userSvc,
 	}
-	router := route.NewRouter()
-	err = router.Setup(routeServices)
+	mux := router.New()
+	err = mux.Setup(routeServices)
 	if err != nil {
 		log.Fatal().Msg("Error initializing HTTP routes.")
 		return err

@@ -8,12 +8,12 @@ import (
 )
 
 var (
-	ErrQueryingDatabase     = errors.New("error querying database")
-	ErrParsingRow           = errors.New("error parsing row from database")
-	ErrHashingPassword      = errors.New("error hashing password")
-	ErrSavingToDatabase     = errors.New("error saving user in database")
-	ErrUpdatingToDatabase   = errors.New("error updating user in database")
-	ErrDeletingFromDatabase = errors.New("error deleting user in database")
+	ErrQueryingDatabase = errors.New("error querying database")
+	ErrParsingRow       = errors.New("error parsing row from database")
+	ErrHashingPassword  = errors.New("error hashing password")
+	//ErrSavingToDatabase     = errors.New("error saving user in database")
+	//ErrUpdatingToDatabase   = errors.New("error updating user in database")
+	//ErrDeletingFromDatabase = errors.New("error deleting user in database")
 )
 
 func buildWhereClause(params map[string]string) (string, []any) {

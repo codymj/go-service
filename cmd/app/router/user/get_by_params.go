@@ -2,13 +2,14 @@ package user
 
 import (
 	"encoding/json"
+	"github.com/julienschmidt/httprouter"
 	"go-service.codymj.io/cmd/app/util"
 	"net/http"
 	"strings"
 )
 
 // getByParams handles requests to GET /users.
-func (h *handler) getByParams(w http.ResponseWriter, r *http.Request) {
+func (h *handler) getByParams(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	// Parse params from request.
 	u, _ := r.URL.Parse(r.URL.String())
 	params := make(map[string]string)
