@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"go-service.codymj.io/cmd/app/config"
 	"go-service.codymj.io/cmd/app/router"
 	"go-service.codymj.io/cmd/app/util"
 	"go-service.codymj.io/internal/database"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -50,7 +50,7 @@ func start() error {
 	}
 
 	// Initialize utility services.
-	validateService := config.NewValidateService()
+	//validateService := config.NewValidateService()
 	passwordService := config.NewPasswordService(config.GetPasswordConfig())
 
 	// Initialize repositories.
@@ -61,8 +61,8 @@ func start() error {
 
 	// Initialize routes.
 	routeServices := util.Services{
-		ValidatorService: validateService,
-		UserService:      userSvc,
+		//ValidatorService: validateService,
+		UserService: userSvc,
 	}
 	mux := router.New()
 	err = mux.Setup(routeServices)
@@ -74,7 +74,7 @@ func start() error {
 	// Start application.
 	log.Info().Msg(fmt.Sprintf("Service running on port %d", port))
 	srv := &http.Server{
-		Handler:      router.Router,
+		Handler:      mux.Router,
 		Addr:         ":" + strconv.Itoa(port),
 		WriteTimeout: writeTimeout,
 		ReadTimeout:  readTimeout,
