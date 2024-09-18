@@ -5,10 +5,10 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
-	"go-service.codymj.io/cmd/app/router/user"
 	"go-service.codymj.io/internal/database"
 	"go-service.codymj.io/internal/password"
-	userdao "go-service.codymj.io/internal/user/dao"
+	"go-service.codymj.io/internal/user"
+	userDao "go-service.codymj.io/internal/user/dao"
 	"time"
 )
 
@@ -90,18 +90,18 @@ func GetPasswordConfig() *password.Config {
 	}
 }
 
-func NewUserRepository(db *database.Connection, ps password.Service) userdao.Repository {
-	return userdao.New(db, ps)
+func NewUserRepository(db *database.Connection, ps password.Service) userDao.Repository {
+	return userDao.New(db, ps)
 }
 
-func NewValidateService() validate.Service {
-	return validate.New()
-}
+//func NewValidateService() validate.Service {
+//	return validate.New()
+//}
 
 func NewPasswordService(cfg *password.Config) password.Service {
 	return password.New(cfg)
 }
 
-func NewUserService(ur userdao.Repository) user.Service {
+func NewUserService(ur userDao.Repository) user.Service {
 	return user.New(ur)
 }

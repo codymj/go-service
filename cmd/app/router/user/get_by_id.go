@@ -19,14 +19,14 @@ func (h *handler) getById(w http.ResponseWriter, r *http.Request, p httprouter.P
 	}
 
 	// Call service to get user by ID.
-	res, err := h.services.UserService.GetById(r.Context(), id)
+	res, err := h.services.UserService.GetById(r.Context(), int64(id))
 	if err != nil {
 		util.WriteErrorResponse(w, err, http.StatusInternalServerError)
 		return
 	}
 
 	// Write response.
-	if res.Id == 0 {
+	if res.UserId == 0 {
 		// No user found.
 		w.WriteHeader(http.StatusNoContent)
 		_ = json.NewEncoder(w).Encode(nil)
