@@ -17,8 +17,8 @@ type Service interface {
 }
 
 // New returns an initialized instance.
-func New(dao dao.Repository) Service {
+func New(userdao dao.Repository) Service {
 	return &service{
-		dao: dao,
+		userdao: userdao,
 	}
 }
