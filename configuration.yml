@@ -1,6 +1,6 @@
 ---
 
-APP:
-  NAMESPACE: io-codymj
-  NAME: go-service
-  VERSION: 0.0.1
+app:
+  namespace: io-codymj
+  name: go-service
+  version: 0.0.1
