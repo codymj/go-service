@@ -1,31 +1,6 @@
 ---
 
-# Application
 APP:
   NAMESPACE: io-codymj
-  NAME: service
+  NAME: go-service
   VERSION: 0.0.1
-
-# Server
-SERVER:
-  PORT: 8080
-  READ_TIMEOUT: 10s
-  WRITE_TIMEOUT: 10s
-  IDLE_TIMEOUT: 60s
-  #SSL_ENABLED: true
-
-# Logging
-LOGGER:
-  LEVEL: info
-
-# Database
-POSTGRES:
-  HOST: localhost
-  PORT: 5432
-  USER: postgres
-  PASSWORD: <env>
-  NAME: postgres
-  MAX_OPEN_CONNS: 4
-  MAX_IDLE_CONNS: 4
-  CONN_MAX_IDLE_TIME: 15m
-  CONN_MAX_LIFETIME: 3m
