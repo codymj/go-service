@@ -1,18 +1,22 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 )
 
 // Handler for GET /health
 func (a *app) getHealth(w http.ResponseWriter, _ *http.Request) {
-	output := "status: ok\n"
-	output = fmt.Sprintf(output+"environment: %s\n", a.config.env)
-	output = fmt.Sprintf(output+"versioin: %s\n", version)
+	// Construct body.
+	data := map[string]string{
+		"status":      "ok",
+		"environment": a.config.env,
+		"version":     version,
+	}
 
-	_, err := fmt.Fprint(w, output)
+	// Send response.
+	err := a.writeJson(w, http.StatusOK, data, nil)
 	if err != nil {
 		a.logger.Error(err.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 	}
 }
