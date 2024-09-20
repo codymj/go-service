@@ -26,9 +26,8 @@ type app struct {
 
 // Application's main function.
 func main() {
-	var cfg config
-
 	// Parse commandline flags.
+	var cfg config
 	flag.IntVar(&cfg.port, "port", 8080, "Application listening port")
 	flag.StringVar(&cfg.env, "env", "dev", "Environment (dev|stg|prd)")
 	flag.Parse()

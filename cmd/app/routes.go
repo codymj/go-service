@@ -11,6 +11,10 @@ func (a *app) routes() http.Handler {
 	// Initialize router instance.
 	router := httprouter.New()
 
+	// Error routes.
+	router.NotFound = http.HandlerFunc(a.notFoundResponse)
+	router.MethodNotAllowed = http.HandlerFunc(a.notAllowedResponse)
+
 	// Application routes.
 	router.HandlerFunc(http.MethodGet, v1+"/health", a.getHealth)
 
@@ -19,5 +23,5 @@ func (a *app) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, v1+"/users/:id", a.getUsersId)
 	router.HandlerFunc(http.MethodPost, v1+"/users", a.postUsers)
 
-	return router
+	return a.recoverPanic(router)
 }
