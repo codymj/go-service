@@ -11,7 +11,7 @@ func (a *app) recoverPanic(next http.Handler) http.Handler {
 		defer func() {
 			if err := recover(); err != nil {
 				w.Header().Set("Connection", "close")
-				a.serverErrorResponse(w, r, fmt.Errorf("%s", err))
+				a.send500(w, r, fmt.Errorf("%s", err))
 			}
 		}()
 

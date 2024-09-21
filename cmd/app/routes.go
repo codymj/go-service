@@ -12,8 +12,8 @@ func (a *app) routes() http.Handler {
 	router := httprouter.New()
 
 	// Error routes.
-	router.NotFound = http.HandlerFunc(a.notFoundResponse)
-	router.MethodNotAllowed = http.HandlerFunc(a.notAllowedResponse)
+	router.NotFound = http.HandlerFunc(a.send404)
+	router.MethodNotAllowed = http.HandlerFunc(a.send405)
 
 	// Application routes.
 	router.HandlerFunc(http.MethodGet, v1+"/health", a.getHealth)

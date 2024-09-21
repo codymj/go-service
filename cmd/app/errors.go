@@ -10,8 +10,8 @@ func (a *app) logError(r *http.Request, err error) {
 	a.logger.Error(err.Error(), "method", r.Method, "uri", r.URL.RequestURI())
 }
 
-// errorResponse sends a JSON-formatted error response to client.
-func (a *app) errorResponse(
+// sendError sends a JSON-formatted error response to client.
+func (a *app) sendError(
 	w http.ResponseWriter,
 	r *http.Request,
 	status int,
@@ -24,29 +24,30 @@ func (a *app) errorResponse(
 	}
 }
 
-// serverErrorResponse sends a JSON-formatted 500 response to client.
-func (a *app) serverErrorResponse(
-	w http.ResponseWriter,
-	r *http.Request,
-	err error,
-) {
-	a.logError(r, err)
-
-	msg := "An internal error occurred and could not process your request."
-	a.errorResponse(w, r, http.StatusInternalServerError, msg)
+// send400 sends a JSON-formatted 400 response to client.
+func (a *app) send400(w http.ResponseWriter, r *http.Request, err error) {
+	a.sendError(w, r, http.StatusBadRequest, err.Error())
 }
 
-// notFoundResponse sends a JSON-formatted 404 response to client.
-func (a *app) notFoundResponse(w http.ResponseWriter, r *http.Request) {
+// send404 sends a JSON-formatted 404 response to client.
+func (a *app) send404(w http.ResponseWriter, r *http.Request) {
 	msg := "The requested resource could not be found."
-	a.errorResponse(w, r, http.StatusNotFound, msg)
+	a.sendError(w, r, http.StatusNotFound, msg)
 }
 
-// notAllowedResponse sends a JSON-formatted 405 response to client.
-func (a *app) notAllowedResponse(w http.ResponseWriter, r *http.Request) {
+// send405 sends a JSON-formatted 405 response to client.
+func (a *app) send405(w http.ResponseWriter, r *http.Request) {
 	msg := fmt.Sprintf(
 		"The %s method is not supported for this resource.",
 		r.Method,
 	)
-	a.errorResponse(w, r, http.StatusMethodNotAllowed, msg)
+	a.sendError(w, r, http.StatusMethodNotAllowed, msg)
+}
+
+// send500 sends a JSON-formatted 500 response to client.
+func (a *app) send500(w http.ResponseWriter, r *http.Request, err error) {
+	a.logError(r, err)
+
+	msg := "An internal error occurred and could not process your request."
+	a.sendError(w, r, http.StatusInternalServerError, msg)
 }

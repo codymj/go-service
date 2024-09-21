@@ -18,6 +18,6 @@ func (a *app) getHealth(w http.ResponseWriter, r *http.Request) {
 	// Send response.
 	err := a.writeJson(w, nil, http.StatusOK, data)
 	if err != nil {
-		a.serverErrorResponse(w, r, err)
+		a.send500(w, r, err)
 	}
 }
