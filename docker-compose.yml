@@ -1,0 +1,54 @@
+services:
+  go-service:
+    container_name: go-service
+    build:
+      dockerfile: dev.Dockerfile
+      context: .
+    depends_on:
+      - go-service-db
+    networks:
+      - go-service-net
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    expose:
+      - "8080"
+      - "8081"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+
+  go-service-db:
+    container_name: go-service-db
+    image: mysql:8
+    restart: always
+    networks:
+      - go-service-net
+    ports:
+      - "3306:3306"
+    expose:
+      - "3306"
+    volumes:
+      - go-service-db-data:/var/lib/mysql
+    env_file:
+      - .env
+
+  go-service-jaeger:
+    container_name: go-service-jaeger
+    image: jaegertracing/all-in-one
+    networks:
+      - go-service-net
+    ports:
+      - "4317:4317"
+      - "16686:16686"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+volumes:
+  go-service-db-data:
+    driver: local
+
+networks:
+  go-service-net:
+    driver: bridge

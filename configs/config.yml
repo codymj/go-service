@@ -1,0 +1,90 @@
+app:
+  name: go-service
+  version: 0.0.1
+modules:
+  core:
+    server:
+      address: ":8081"
+      dashboard:
+        enabled: true
+        overview:
+          app_env: true
+          app_debug: true
+          app_version: true
+          log_level: true
+          log_output: true
+          trace_sampler: true
+          trace_processor: true
+      metrics:
+        expose: true
+        collect:
+          enabled: true
+        normalize:
+          request_path: true
+          response_status: true
+      healthcheck:
+        startup:
+          expose: true
+        readiness:
+          expose: true
+        liveness:
+          expose: true
+      debug:
+        config:
+          expose: true
+        pprof:
+          expose: true
+        routes:
+          expose: true
+        stats:
+          expose: true
+        build:
+          expose: true
+        modules:
+          expose: true
+  http:
+    server:
+      address: ":8080"
+      trace:
+        enabled: true
+      metrics:
+        collect:
+          enabled: true
+        normalize:
+          request_path: true
+          response_status: true
+      templates:
+        enabled: true
+        path: templates/*.html
+  sql:
+    driver: mysql
+    dsn: ${MYSQL_USER}:${MYSQL_PASSWORD}@tcp(${MYSQL_HOST}:${MYSQL_PORT})/${MYSQL_DATABASE}?parseTime=true
+    migrations:
+      path: db/migrations
+    log:
+      enabled: true
+      level: debug
+      arguments: true
+      exclude:
+        - "connection:ping"
+        - "connection:reset-session"
+        - "connection:close"
+    trace:
+      enabled: true
+      arguments: true
+      exclude:
+        - "connection:ping"
+        - "connection:reset-session"
+        - "connection:close"
+  log:
+    level: debug
+config:
+  authentication:
+    enabled: false
+    secret: super-secret
+  dashboard:
+    title: go-service
+  service:
+    user:
+      log: true
+      trace: true

@@ -1,0 +1,29 @@
+package cmd
+
+import (
+	"github.com/ankorstore/yokai/fxcore"
+	"github.com/ankorstore/yokai/fxsql"
+	"github.com/spf13/cobra"
+	"go.uber.org/fx"
+)
+
+func init() {
+	rootCmd.AddCommand(migrateCmd)
+}
+
+var migrateCmd = &cobra.Command{
+	Use:   "migrate [command] [args...]",
+	Short: "Run application database migrations",
+	Args:  cobra.MinimumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		fxcore.
+			NewBootstrapper().
+			WithContext(cmd.Context()).
+			WithOptions(
+				fx.NopLogger,
+				fxsql.FxSQLModule,
+				fxsql.RunFxSQLMigrationAndShutdown(args[0], args[1:]...),
+			).
+			RunApp()
+	},
+}

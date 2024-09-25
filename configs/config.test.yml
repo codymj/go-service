@@ -1,0 +1,45 @@
+app:
+  debug: true
+modules:
+  sql:
+    driver: sqlite
+    dsn: ":memory:"
+    migrations:
+      stdout: false
+  log:
+    output: test
+  trace:
+    processor:
+      type: test
+config:
+  authentication:
+    enabled: ${AUTH_ENABLED}
+    secret: ${AUTH_SECRET}
+  dashboard:
+    title: Test dashboard title
+  seed:
+    users:
+      codymj:
+        username: codymj
+        email: codymj@mail.com
+        password: $argon2i$v=19$m=64,t=6,p=4$QUFZa21VMVhOdlZ6dTY4TA$VJ3CK7sII/F7WrjiHOvCuzCY436tTG0FxW9xm23KuEEyycpXCmhvYEQd4k/zSAkuvIl+D1HjLy4EEQ
+        location: Tampa, FL
+        is_validated: false
+        created_at: 1727223102405
+        modified_at: 1727223102405
+      jsmith:
+        username: jsmith
+        email: jsmith@mail.com
+        password: $argon2i$v=19$m=64,t=6,p=4$bUFPSjlieTJ2YnhpaTZjNg$98Ww73c5C0xgsKdRs8fBNfZfLfOtmJnPs5idXCASrpiss584MBxJ2zvgMa90d3LuQdGVdnbSF7WpOg
+        location: New York, NY
+        is_validated: false
+        created_at: 1727223102413
+        modified_at: 1727223102413
+      wmozart:
+        username: wmozart
+        email: wmozart@mail.com
+        password: $argon2i$v=19$m=64,t=6,p=4$dlNCMnJHbUpIbmhaYmFOQg$VBRBsyiSzQ/0YNkh2myiCoyKg8cbZeEQib/URF27c8emsLYk3LTEWCkGM0WbDVzrrs/3+vjJojoyIg
+        location: Vienna, Austria
+        is_validated: false
+        created_at: 1727223102424
+        modified_at: 1727223102424
